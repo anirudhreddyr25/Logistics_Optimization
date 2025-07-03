@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scheduler & Upload - Logistics AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .file-upload-box {
+            border: 2px dashed #cbd5e0;
+            transition: border-color 0.2s, background-color 0.2s;
+        }
+        .file-upload-box.dragover {
+            border-color: #2dd4bf; /* teal-400 */
+            background-color: #f0fdfa; /* teal-50 */
+        }
+        .file-name {
+            font-size: 0.8rem;
+            color: #4a5568;
+            margin-top: 0.5rem;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+
+    <div class="flex h-screen">
+        <!-- Sidebar Navigation -->
+        <aside class="w-64 bg-gray-900 text-gray-300 p-6 flex flex-col">
+            <h1 class="text-2xl font-bold text-white mb-8">Logistics AI</h1>
+            <nav>
+                <a href="/dashboard" class="sidebar-link block py-3 px-4 rounded-lg font-semibold">Dashboard</a>
+                <a href="/scheduler" class="sidebar-link active block py-3 px-4 rounded-lg mt-2">Scheduler & Upload</a>
+                <a href="/model_insights" class="sidebar-link block py-3 px-4 rounded-lg mt-2">Model Insights</a>
+                <a href="/" class="sidebar-link block py-3 px-4 rounded-lg mt-2">Logout</a>
+            </nav>
+            <div class="mt-auto text-sm text-gray-500">
+                <p>&copy; 2024 Logistics AI Inc.</p>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-8 overflow-y-auto">
+            <h2 class="text-3xl font-bold text-gray-800 mb-8">Scheduler & Data Upload</h2>
+
+            <!-- Section 1: Scheduler -->
+            <div class="bg-white p-6 rounded-xl shadow-md mb-8">
+                <h3 class="text-xl font-semibold text-gray-700 mb-4">Run Optimizer</h3>
+                <div class="flex items-center space-x-6">
+                    <button id="run-scheduler-btn" class="bg-teal-500 hover:bg-teal-600 text-white font-bold py-3 px-6 rounded-lg transition-colors">
+                        Run Optimization & Scheduler
+                    </button>
+                    <div class="text-gray-600">
+                        <p><strong>Last successful run:</strong> <span id="last-run-time">N/A</span></p>
+                    </div>
+                </div>
+                 <div id="scheduler-status" class="mt-4 text-center p-3 rounded-lg" style="display: none;"></div>
+            </div>
+
+            <!-- Section 2: File Upload -->
+            <div class="bg-white p-6 rounded-xl shadow-md">
+                <h3 class="text-xl font-semibold text-gray-700 mb-2">Upload New Data</h3>
+                <p class="text-gray-600 mb-6">Upload new CSV files to retrain the model. The files must be named: orders.csv, routes.csv, warehouses.csv, and stores.csv.</p>
+                <form id="upload-form">
+                    <div class="file-upload-box p-6 rounded-lg text-center" id="drop-zone">
+                        <label for="file-input" class="cursor-pointer">
+                            <svg class="w-16 h-16 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                            <p class="mt-4 text-lg font-semibold text-gray-700">Drag & drop files here or click to select</p>
+                            <p class="text-sm text-gray-500">CSV files only</p>
+                        </label>
+                        <input type="file" id="file-input" class="hidden" multiple accept=".csv"/>
+                        <div id="file-list" class="mt-4"></div>
+                    </div>
+                    <div class="mt-6 text-right">
+                         <button id="submit-files-btn" type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-colors">
+                            Submit & Refresh Model
+                        </button>
+                    </div>
+                </form>
+                <div id="upload-status" class="mt-4 text-center p-3 rounded-lg" style="display: none;"></div>
+            </div>
+        </main>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Scheduler Run Logic ---
+            const runBtn = document.getElementById('run-scheduler-btn');
+            const lastRunSpan = document.getElementById('last-run-time');
+            const schedulerStatus = document.getElementById('scheduler-status');
+
+            runBtn.addEventListener('click', () => {
+                runBtn.textContent = 'Running...';
+                runBtn.disabled = true;
+                schedulerStatus.style.display = 'none';
+
+                fetch('/api/run_scheduler', { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            schedulerStatus.textContent = `Error: ${data.error}`;
+                            schedulerStatus.className = 'mt-4 text-center p-3 rounded-lg bg-red-100 text-red-800';
+                        } else {
+                            schedulerStatus.textContent = data.message;
+                            schedulerStatus.className = 'mt-4 text-center p-3 rounded-lg bg-green-100 text-green-800';
+                            lastRunSpan.textContent = data.timestamp;
+                        }
+                        schedulerStatus.style.display = 'block';
+                    })
+                    .catch(error => {
+                        console.error('Error running scheduler:', error);
+                        schedulerStatus.textContent = 'An unexpected error occurred. Check the console.';
+                        schedulerStatus.className = 'mt-4 text-center p-3 rounded-lg bg-red-100 text-red-800';
+                        schedulerStatus.style.display = 'block';
+                    })
+                    .finally(() => {
+                        runBtn.textContent = 'Run Optimization & Scheduler';
+                        runBtn.disabled = false;
+                    });
+            });
+
+            // --- File Upload Logic ---
+            const uploadForm = document.getElementById('upload-form');
+            const fileInput = document.getElementById('file-input');
+            const dropZone = document.getElementById('drop-zone');
+            const fileListDiv = document.getElementById('file-list');
+            const uploadStatus = document.getElementById('upload-status');
+            let filesToUpload = [];
+
+            function updateFileList() {
+                fileListDiv.innerHTML = '';
+                if (filesToUpload.length > 0) {
+                    const list = document.createElement('ul');
+                    filesToUpload.forEach((file, index) => {
+                        const item = document.createElement('li');
+                        item.className = 'file-name';
+                        item.textContent = file.name;
+                        list.appendChild(item);
+                    });
+                    fileListDiv.appendChild(list);
+                }
+            }
+            
+            dropZone.addEventListener('click', () => fileInput.click());
+
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('dragover');
+            });
+
+            dropZone.addEventListener('dragleave', () => {
+                dropZone.classList.remove('dragover');
+            });
+
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('dragover');
+                filesToUpload = Array.from(e.dataTransfer.files);
+                updateFileList();
+            });
+            
+            fileInput.addEventListener('change', () => {
+                filesToUpload = Array.from(fileInput.files);
+                updateFileList();
+            });
+
+            uploadForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                if (filesToUpload.length === 0) {
+                    alert('Please select files to upload.');
+                    return;
+                }
+
+                const formData = new FormData();
+                filesToUpload.forEach(file => {
+                    formData.append('files', file);
+                });
+
+                const submitBtn = document.getElementById('submit-files-btn');
+                submitBtn.textContent = 'Uploading...';
+                submitBtn.disabled = true;
+                uploadStatus.style.display = 'none';
+
+                fetch('/api/upload_data', {
+                    method: 'POST',
+                    body: formData,
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        uploadStatus.textContent = `Error: ${data.error}`;
+                        uploadStatus.className = 'mt-4 text-center p-3 rounded-lg bg-red-100 text-red-800';
+                    } else {
+                        uploadStatus.textContent = data.message;
+                        uploadStatus.className = 'mt-4 text-center p-3 rounded-lg bg-green-100 text-green-800';
+                        filesToUpload = [];
+                        updateFileList();
+                        fileInput.value = ''; // Reset file input
+                    }
+                    uploadStatus.style.display = 'block';
+                })
+                .catch(error => {
+                    console.error('Error uploading files:', error);
+                    uploadStatus.textContent = 'An unexpected error occurred during upload.';
+                    uploadStatus.className = 'mt-4 text-center p-3 rounded-lg bg-red-100 text-red-800';
+                    uploadStatus.style.display = 'block';
+                })
+                .finally(() => {
+                    submitBtn.textContent = 'Submit & Refresh Model';
+                    submitBtn.disabled = false;
+                });
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+# .gitignore
+
+# Python virtual environment
+.venv
+venv/
+venv.bak/
+
+# Python cache files
+__pycache__/
+*.pyc
+
+# Environment variables
+.env
+
+# Generated data files (optional, but good practice)
+scheduler_log.csv

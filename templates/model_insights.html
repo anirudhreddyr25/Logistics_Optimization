@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Model Insights - Logistics AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+
+    <div class="flex h-screen">
+        <!-- Sidebar Navigation -->
+        <aside class="w-64 bg-gray-900 text-gray-300 p-6 flex flex-col">
+            <h1 class="text-2xl font-bold text-white mb-8">Logistics AI</h1>
+            <nav>
+                <a href="/dashboard" class="sidebar-link block py-3 px-4 rounded-lg font-semibold">Dashboard</a>
+                <a href="/scheduler" class="sidebar-link block py-3 px-4 rounded-lg mt-2">Scheduler & Upload</a>
+                <a href="/model_insights" class="sidebar-link active block py-3 px-4 rounded-lg mt-2">Model Insights</a>
+                <a href="/" class="sidebar-link block py-3 px-4 rounded-lg mt-2">Logout</a>
+            </nav>
+            <div class="mt-auto text-sm text-gray-500">
+                <p>&copy; 2024 Logistics AI Inc.</p>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-8 overflow-y-auto">
+            <h2 class="text-3xl font-bold text-gray-800 mb-8">Model Insights</h2>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Chart 1: Delay Probability -->
+                <div class="bg-white p-6 rounded-xl shadow-md">
+                    <h3 class="text-xl font-semibold text-gray-700 mb-4">Delay Probability vs. Distance</h3>
+                    <canvas id="delayChart"></canvas>
+                </div>
+
+                <!-- Chart 2: Warehouse Performance -->
+                <div class="bg-white p-6 rounded-xl shadow-md">
+                    <h3 class="text-xl font-semibold text-gray-700 mb-4">Warehouse Performance by Avg. Fuel Cost</h3>
+                    <canvas id="fuelCostChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Model Objective Function -->
+            <div class="mt-8 bg-white p-6 rounded-xl shadow-md">
+                <h3 class="text-xl font-semibold text-gray-700 mb-4">Model's Objective Function</h3>
+                <div class="text-gray-600 space-y-4">
+                    <p>The core of the optimization model is an objective function that calculates a weighted score for each potential route. The goal is to minimize this score. A lower score indicates a more optimal route.</p>
+                    <p class="bg-gray-100 p-4 rounded-lg">
+                        <code class="font-mono text-sm">
+                            Route Score = (w1 * Fuel_Cost) + (w2 * Delay_Penalty) + (w3 * Distance)
+                        </code>
+                    </p>
+                    <ul class="list-disc list-inside space-y-2">
+                        <li><strong class="font-semibold">Fuel_Cost:</strong> The financial cost of the route in USD.</li>
+                        <li><strong class="font-semibold">Delay_Penalty:</strong> A penalty score based on the model's prediction of potential delays.</li>
+                        <li><strong class="font-semibold">Distance:</strong> The travel distance in kilometers.</li>
+                        <li><strong class="font-semibold">w1, w2, w3:</strong> These are the weights assigned to each factor (currently 0.5, 100 * 0.3, and 0.2 respectively in the model), configurable to prioritize cost, speed, or reliability.</li>
+                    </ul>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            fetch('/api/model_insights_data')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert(`Error loading chart data: ${data.error}`);
+                        return;
+                    }
+                    renderDelayChart(data.delay_chart);
+                    renderFuelCostChart(data.fuel_chart);
+                })
+                .catch(error => {
+                    console.error('Error fetching chart data:', error);
+                    alert('Could not connect to the server to fetch chart data.');
+                });
+        });
+
+        function renderDelayChart(chartData) {
+            const delayCtx = document.getElementById('delayChart').getContext('2d');
+            new Chart(delayCtx, {
+                type: 'line',
+                data: {
+                    labels: chartData.labels,
+                    datasets: [{
+                        label: 'Delay Probability',
+                        data: chartData.data,
+                        borderColor: '#0d9488', // teal-600
+                        backgroundColor: 'rgba(13, 148, 136, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: { 
+                        y: { 
+                            beginAtZero: true, 
+                            title: { display: true, text: 'Probability (%)' } 
+                        },
+                        x: {
+                            title: { display: true, text: 'Distance (km)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderFuelCostChart(chartData) {
+            const fuelCostCtx = document.getElementById('fuelCostChart').getContext('2d');
+            new Chart(fuelCostCtx, {
+                type: 'bar',
+                data: {
+                    labels: chartData.labels,
+                    datasets: [{
+                        label: 'Average Fuel Cost',
+                        data: chartData.data,
+                        backgroundColor: ['#3b82f6', '#60a5fa', '#93c5fd', '#bfdbfe', '#dbeafe', '#e0f2fe'],
+                        borderColor: '#1d4ed8',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: { 
+                        y: { 
+                            beginAtZero: true, 
+                            title: { display: true, text: 'Average Cost ($)' } 
+                        },
+                        x: {
+                             title: { display: true, text: 'Warehouse ID' }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

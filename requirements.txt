@@ -1,0 +1,10 @@
+# requirements.txt
+Flask
+pandas
+numpy
+pulp
+haversine
+gunicorn
+requests
+googlemaps
+python-dotenv

@@ -1,0 +1,25 @@
+# This file defines how to run your multi-container application
+version: '3.8'
+
+services:
+  # The Flask Web Application Service
+  web:
+    build: .
+    ports:
+      - "5001:5001"
+    volumes:
+      - ./data:/app/data
+      - ./scheduler_log.csv:/app/scheduler_log.csv
+      - ./.env:/app/.env
+    restart: always
+
+  # The Hourly Job Scheduler Service
+  scheduler:
+    build: .
+    command: ["python", "hourly_job.py"]
+    volumes:
+      - ./scheduler_log.csv:/app/scheduler_log.csv
+      - ./.env:/app/.env
+    depends_on:
+      - web
+    restart: always

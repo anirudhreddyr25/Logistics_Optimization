@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Logistics AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+
+    <div class="flex h-screen">
+        <!-- Sidebar Navigation -->
+        <aside class="w-64 bg-gray-900 text-gray-300 p-6 flex flex-col">
+            <h1 class="text-2xl font-bold text-white mb-8">Logistics AI</h1>
+            <nav>
+                <a href="/dashboard" class="sidebar-link active block py-3 px-4 rounded-lg font-semibold">Dashboard</a>
+                <a href="/scheduler" class="sidebar-link block py-3 px-4 rounded-lg mt-2">Scheduler & Upload</a>
+                <a href="/model_insights" class="sidebar-link block py-3 px-4 rounded-lg mt-2">Model Insights</a>
+                <a href="/" class="sidebar-link block py-3 px-4 rounded-lg mt-2">Logout</a>
+            </nav>
+            <div class="mt-auto text-sm text-gray-500">
+                <p>&copy; 2024 Logistics AI Inc.</p>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-8 overflow-y-auto">
+            <h2 class="text-3xl font-bold text-gray-800 mb-8">Dashboard</h2>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Left Panel -->
+                <div class="lg:col-span-1 bg-white p-6 rounded-xl shadow-md">
+                    <h3 class="text-xl font-semibold text-gray-700 mb-4">Find Optimal Route</h3>
+                    <form id="route-finder-form">
+                        <div class="mb-4">
+                            <label for="source-warehouse" class="block text-sm font-medium text-gray-600 mb-2">Source Warehouse</label>
+                            <select id="source-warehouse" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+                                <option>Loading warehouses...</option>
+                            </select>
+                        </div>
+                        <div class="mb-6">
+                            <label for="destination-store" class="block text-sm font-medium text-gray-600 mb-2">Destination Store</label>
+                            <select id="destination-store" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+                                <option>Loading stores...</option>
+                            </select>
+                        </div>
+                        <button type="submit" id="get-route-btn" class="w-full bg-teal-500 hover:bg-teal-600 text-white font-bold py-3 px-4 rounded-lg transition-colors">
+                            Get Optimized Route
+                        </button>
+                    </form>
+                    <div class="mt-6">
+                        <label for="optimal-route" class="block text-sm font-medium text-gray-600 mb-2">Model-Generated Optimal Route</label>
+                        <textarea id="optimal-route" rows="5" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg" readonly>Route details will appear here...</textarea>
+                    </div>
+                </div>
+
+                <!-- Right Panel -->
+                <div class="lg:col-span-2">
+                    <!-- Stat Cards -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+                        <div class="bg-white p-6 rounded-xl shadow-md text-center">
+                            <h4 class="text-sm font-medium text-gray-500 uppercase">Total Orders</h4>
+                            <p id="total-orders" class="text-4xl font-bold text-gray-800 mt-2">0</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-xl shadow-md text-center">
+                            <h4 class="text-sm font-medium text-gray-500 uppercase">Total Warehouses</h4>
+                            <p id="total-warehouses" class="text-4xl font-bold text-gray-800 mt-2">0</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-xl shadow-md text-center">
+                            <h4 class="text-sm font-medium text-gray-500 uppercase">Total Stores</h4>
+                            <p id="total-stores" class="text-4xl font-bold text-gray-800 mt-2">0</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-xl shadow-md text-center">
+                            <h4 class="text-sm font-medium text-gray-500 uppercase">Last Scheduler Run</h4>
+                            <p id="last-run" class="text-2xl font-bold text-gray-800 mt-3">N/A</p>
+                        </div>
+                    </div>
+
+                    <!-- Latest Routes Table -->
+                    <div class="bg-white p-6 rounded-xl shadow-md">
+                        <h3 class="text-xl font-semibold text-gray-700 mb-4">Latest 5 Optimized Routes</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left">
+                                <thead>
+                                    <tr class="bg-gray-50 border-b border-gray-200">
+                                        <th class="p-3 font-semibold text-gray-600">Order ID</th>
+                                        <th class="p-3 font-semibold text-gray-600">Warehouse</th>
+                                        <th class="p-3 font-semibold text-gray-600">Store</th>
+                                        <th class="p-3 font-semibold text-gray-600">Cost ($)</th>
+                                        <th class="p-3 font-semibold text-gray-600">Delay %</th>
+                                        <th class="p-3 font-semibold text-gray-600">Distance (km)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="latest-routes-body">
+                                    <!-- Rows will be inserted here by JavaScript -->
+                                    <tr><td colspan="6" class="text-center p-4">Loading latest routes...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // --- Fetch and populate initial dashboard data ---
+            fetch('/api/dashboard_data')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert(`Error loading dashboard data: ${data.error}`);
+                        return;
+                    }
+
+                    // Populate stats
+                    document.getElementById('total-orders').textContent = data.stats.total_orders;
+                    document.getElementById('total-warehouses').textContent = data.stats.total_warehouses;
+                    document.getElementById('total-stores').textContent = data.stats.total_stores;
+                    document.getElementById('last-run').textContent = data.stats.last_run;
+
+                    // Populate warehouse dropdown
+                    const warehouseSelect = document.getElementById('source-warehouse');
+                    warehouseSelect.innerHTML = ''; // Clear loading message
+                    data.warehouses.forEach(wh => {
+                        const option = document.createElement('option');
+                        option.value = wh.warehouse_id;
+                        option.textContent = `${wh.warehouse_id} - ${wh.location}`;
+                        warehouseSelect.appendChild(option);
+                    });
+
+                    // Populate store dropdown
+                    const storeSelect = document.getElementById('destination-store');
+                    storeSelect.innerHTML = ''; // Clear loading message
+                    data.stores.forEach(st => {
+                        const option = document.createElement('option');
+                        option.value = st.store_id;
+                        option.textContent = `${st.store_id} - ${st.location}`;
+                        storeSelect.appendChild(option);
+                    });
+
+                    // Populate latest routes table
+                    const routesBody = document.getElementById('latest-routes-body');
+                    routesBody.innerHTML = ''; // Clear loading message
+                    if (data.latest_routes.length > 0) {
+                        data.latest_routes.forEach(route => {
+                            const row = document.createElement('tr');
+                            row.className = 'border-b border-gray-200';
+                            row.innerHTML = `
+                                <td class="p-3">${route.order_id}</td>
+                                <td class="p-3">${route.warehouse_id}</td>
+                                <td class="p-3">${route.store_id}</td>
+                                <td class="p-3">${parseFloat(route.fuel_cost_usd).toFixed(2)}</td>
+                                <td class="p-3 text-green-600">${(parseFloat(route.delay_probability) * 100).toFixed(1)}%</td>
+                                <td class="p-3">${parseFloat(route.distance_km).toFixed(1)}</td>
+                            `;
+                            routesBody.appendChild(row);
+                        });
+                    } else {
+                        routesBody.innerHTML = '<tr><td colspan="6" class="text-center p-4">No routes have been optimized yet.</td></tr>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching dashboard data:', error);
+                    alert('Could not connect to the server to fetch dashboard data.');
+                });
+
+            // --- Handle the "Get Optimized Route" form submission ---
+            const routeFinderForm = document.getElementById('route-finder-form');
+            routeFinderForm.addEventListener('submit', function(event) {
+                event.preventDefault(); // Prevent default form submission
+
+                const getRouteBtn = document.getElementById('get-route-btn');
+                const optimalRouteText = document.getElementById('optimal-route');
+                
+                getRouteBtn.textContent = 'Finding...';
+                getRouteBtn.disabled = true;
+                optimalRouteText.value = 'Calculating optimal route...';
+
+                const source = document.getElementById('source-warehouse').value;
+                const destination = document.getElementById('destination-store').value;
+
+                fetch('/api/get_route', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ source, destination }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        optimalRouteText.value = `Error: ${data.error}`;
+                    } else {
+                        optimalRouteText.value = data.route_details;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error finding route:', error);
+                    optimalRouteText.value = 'An error occurred. Could not fetch route details.';
+                })
+                .finally(() => {
+                    getRouteBtn.textContent = 'Get Optimized Route';
+                    getRouteBtn.disabled = false;
+                });
+            });
+        });
+    </script>
+</body>
+</html>

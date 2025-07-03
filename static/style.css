@@ -1,0 +1,15 @@
+/* Using Tailwind CSS via CDN for rapid prototyping and modern design. */
+/* This file is for custom CSS overrides if needed. */
+
+body {
+    font-family: 'Inter', sans-serif;
+}
+
+.sidebar-link {
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.sidebar-link:hover, .sidebar-link.active {
+    background-color: #2d3748; /* bg-gray-800 */
+    color: white;
+}
