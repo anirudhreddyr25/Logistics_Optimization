@@ -1,3 +1,4 @@
+# preprocessing.py
 import pandas as pd
 
 def load_data():
@@ -5,16 +6,15 @@ def load_data():
     try:
         warehouses = pd.read_csv("data/warehouses.csv")
         stores = pd.read_csv("data/stores.csv")
-        routes = pd.read_csv("data/routes.csv")
         orders = pd.read_csv("data/orders.csv")
-        return warehouses, stores, routes, orders
+        # We no longer load routes.csv here
+        return warehouses, stores, orders
     except FileNotFoundError as e:
-        print(f"Data loading error: {e}. Make sure all CSV files are in the 'data' directory.")
-        # Return empty DataFrames to prevent crashes if files are missing
-        return pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
+        print(f"Data loading error: {e}. Make sure warehouses, stores, and orders CSV files are in the 'data' directory.")
+        return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
 
 def preprocess_all():
     """Loads and preprocesses all data files."""
-    warehouses, stores, routes, orders = load_data()
-    # In a real project, you might add more preprocessing steps here.
-    return warehouses, stores, routes, orders
+    # Note: routes is no longer returned from this function
+    warehouses, stores, orders = load_data()
+    return warehouses, stores, orders
